@@ -70,7 +70,7 @@ class VerticeAnalysis:
                             Kagome
                             '''
                             if 1.1 > dist > 0.1:
-                                lij: float = dx * self.mx[j] + dy * self.my[j]
+                                lij = (dx * self.mx[j] + dy * self.my[j]) / dist ** 2
                                 ver.append(j)
                                 ver_q.append(lij)
                         else:
@@ -78,7 +78,7 @@ class VerticeAnalysis:
                             Triangular
                             '''
                             if 1.3 > dist > 0.9:
-                                lij = dx * self.mx[j] + dy * self.my[j]
+                                lij = (dx * self.mx[j] + dy * self.my[j]) / dist ** 2
                                 ver.append(j)
                                 ver_q.append(lij)
             if len(ver) != 0:
