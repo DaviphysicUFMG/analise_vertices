@@ -4,7 +4,7 @@ from main import VerticeAnalysis
 import matplotlib.pyplot as plt
 
 
-config0 = pd.read_csv('config0.csv', sep="\s+")
+config0 = pd.read_csv('config0.csv')
 x = config0.x.to_numpy()
 y = config0.y.to_numpy()
 mx = config0.mx.to_numpy()
