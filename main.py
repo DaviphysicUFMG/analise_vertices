@@ -5,7 +5,7 @@ from plot import plot_vector, plot_vertice
 
 class VerticeAnalysis:
 
-    def __init__(self, p_x, p_y, mag_x, mag_y):
+    def __init__(self, p_x, p_y, mag_x, mag_y, Spin=None, nx=50, ny=50):
         self.v_x = None
         self.v_y = None
         self.vertice = None
@@ -15,13 +15,24 @@ class VerticeAnalysis:
         self.y = p_y
         self.mx = mag_x
         self.my = mag_y
+        self.nx = nx
+        self.ny = ny
+        self.Bx = np.zeros(shape=(nx, ny))
+        self.By = np.zeros(shape=(nx, ny))
+        self.XX = np.zeros(shape=(nx, ny))
+        self.YY = np.zeros(shape=(nx, ny))
         self.Ns = len(self.x)
-        self.Spin = np.random.choice([-1, 1], size=self.Ns)
+        if Spin is None:
+            self.Spin = np.ones(self.Ns)  # np.random.choice([-1, 1], size=self.Ns)
+        else:
+            self.Spin = Spin
         self._Lx = max(self.x) - min(self.x)
         self._Ly = max(self.y) - min(self.y) + np.sin(np.deg2rad(60))
         self._calculate_vertices_()
         self._calculate_vertices_q_()
-        self._get_charge()
+        self.get_charge()
+        self.init_grid()
+        self.calc_field()
 
     def _calculate_vertices_(self):
         """
@@ -88,7 +99,34 @@ class VerticeAnalysis:
         self.vertice = vertice
         self.vertice_q = vertice_q
 
-    def _get_charge(self):
+    def init_grid(self):
+        xmin, xmax = min(self.x), max(self.x)
+        ymin, ymax = min(self.y), max(self.y)
+        X = np.linspace(xmin, xmax, self.nx)
+        Y = np.linspace(ymin, ymax, self.ny)
+        self.XX, self.YY = np.meshgrid(X, Y)
+
+    def calc_field(self):
+        self.Bx = np.zeros(shape=(self.nx, self.ny))
+        self.By = np.zeros(shape=(self.nx, self.ny))
+
+        for jB in range(self.ny):
+            for iB in range(self.nx):
+                for i in range(self.Ns):
+                    dx = self.XX[iB, jB] - self.x[i]
+                    dy = self.YY[iB, jB] - self.y[i]
+                    dist = np.sqrt(dx ** 2 + dy ** 2)
+                    if dist > 0.1:
+                        dx /= dist
+                        dy /= dist
+                        a1 = 3*((self.mx[i] * dx) + (self.my[i] * dy))
+                        self.Bx[iB, jB] += self.Spin[i] * (a1 * dx - self.mx[i]) / dist ** 3
+                        self.By[iB, jB] += self.Spin[i] * (a1 * dy - self.my[i]) / dist ** 3
+
+        self.Bx /= self.Ns
+        self.By /= self.Ns
+
+    def get_charge(self):
         self.charge = np.zeros(len(self.vertice))
 
         for i in range(len(self.vertice)):
@@ -106,5 +144,5 @@ class VerticeAnalysis:
         return plot_vector(pos, vec, **kwargs)
 
     def plot_model_vertice(self, label=False, ax=None):
-        self._get_charge()
+        self.get_charge()
         return plot_vertice(self.v_x, self.v_y, self.charge, ax=ax, label=label)
