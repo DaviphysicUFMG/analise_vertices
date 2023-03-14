@@ -11,59 +11,34 @@ y = config0.y.to_numpy()
 mx = config0.mx.to_numpy()
 my = config0.my.to_numpy()
 
-model = VerticeAnalysis(x, y, mx, my, nx=100, ny=100)
+model = VerticeAnalysis(x, y, mx, my)
 
-XX = model.XX
-YY = model.YY
-Bx0 = model.Bx.copy()
-By0 = model.By.copy()
-charge0 = model.charge.copy()
+Bx_init = model.Bx.copy()   # Campo magnético inicial
+By_init = model.By.copy()
+charge_init = model.charge.copy()   # Carga magnética inicial
 
-model.Spin[133] *= -1
-model.Spin[162] *= -1
-model.Spin[163] *= -1
-model.Spin[195] *= -1
-model.Spin[196] *= -1
+spins = pd.read_parquet('Spin.parquet')
+spins = spins.T
 
+model.Spin = spins[0].to_list()
 model.calc_field()
-Bx = model.Bx
-By = model.By
+model.get_charge()
 
-Bx1 = Bx - Bx0
-By1 = By - By0
+Bx = model.Bx - Bx_init
+By = model.By - By_init
+
+charge = model.charge - charge_init
 
 kwargs = {
     'cmap': 'flatspin',
     'alpha': 1.,
 }
-model.get_charge()
-charge1 = model.charge - charge0
 
 fig, axes = plt.subplots(1, 2, figsize=(8, 3))
 
 quiv = model.plot_model(ax=axes[0], **kwargs)
-plot_vertice(model.v_x, model.v_y, charge1, ax=axes[1])
-axes[1].streamplot(XX, YY, Bx1, By1, density=1, linewidth=0.8)
+plot_vertice(model.v_x, model.v_y, charge, ax=axes[1])
+axes[1].streamplot(model.XX, model.YY, Bx, By, density=1, linewidth=0.8)
 axes[1].axis('equal')
 axes[1].axis('off')
 plt.show()
-
-
-# carga_k = 0
-# carga_T = 0
-# for i in range(model.Ns):
-#     if (i + 1) % 3 != 0:
-#         carga_k += model.charge[i]
-#     else:
-#         carga_T += model.charge[i]
-#
-# print("Carga Kagome:", np.around(carga_k, 3))
-# print("Carga Triangular:", np.around(carga_T, 3))
-#
-# plt.figure(figsize=(12, 10))
-# ax = plt.gca()
-#
-# scatter = model.plot_model_vertice(ax=ax, label=True)
-# quiv = model.plot_model(ax=ax, **{"cmap": 'peem30'})
-#
-# plt.show()
