@@ -151,6 +151,7 @@ module var_annealing
    real(8), parameter :: pi = 4.0d0*atan(1.0d0)
    integer :: seed,N_sin,IniCon
    integer :: Ns,N_viz,N_mc,N_temp,N_skt,N_kago,N_tri,N_mssf
+   integer :: ssf_acc, kag_acc, tri_acc, N_k, N_T
    integer, dimension(:), allocatable :: S,Nviz,jviz
    integer, dimension(:), allocatable :: Sk,Vk,Rk,St,Vt,Rt
    real(8), dimension(:), allocatable :: Aij,Bi
@@ -448,15 +449,20 @@ end subroutine update
 ! Realiza N_mc's passos de Monte Carlo modificados ( Single spin flip e Worm)
 
 subroutine Monte_Carlo()
-   use var_annealing, only : N_mc,N_mssf,beta,iunit_conf,iunit_en,N_sin,N_kago,N_tri,temp
+   use var_annealing, only : N_mc,beta,iunit_conf,iunit_en, &
+                             N_sin,N_kago,N_tri,temp,ssf_acc,kag_acc,tri_acc,Ns,N_K,N_T
    implicit none
    !real(8), intent(in) :: temps
    integer :: imc,kmc,tmc,smc
+   real(8) :: SSF, kagome_loop, triagular_loop
 
    beta = 1.0d0/temp
 
    kmc = 0
 
+   ssf_acc = 0
+   kag_acc = 0
+   tri_acc = 0
    ! Termaliza
    print*, 'Termalizando em : T = ', temp
    do imc = 1,N_mc
@@ -472,10 +478,16 @@ subroutine Monte_Carlo()
    end do
    print*, 'Termalizou em : T = ', temp
 
-   call config_S(iunit_conf,0)
+   ! call config_S(iunit_conf,0)
    call En_save(iunit_en,1)
 
    ! Amostras
+
+   ssf_acc = 0
+   kag_acc = 0
+   tri_acc = 0
+   N_K = 0
+   N_T = 0
 
    do imc = 1,N_mc
       do smc = 1,N_sin
@@ -489,11 +501,16 @@ subroutine Monte_Carlo()
       end do
       call En_save(iunit_en,2)
       ! if (mod(imc,N_mssf).eq.0) then
-      call config_S(iunit_conf,1)
+      ! call config_S(iunit_conf,1)
       ! end if
    end do
 
-   call config_S(iunit_conf,3)
+   SSF = real(ssf_acc,8)/(N_mc*N_sin*Ns)
+   kagome_loop = real(kag_acc,8)/(N_mc*N_kago)
+   triagular_loop = real(tri_acc,8)/(N_mc*N_tri)
+
+   ! call config_S(iunit_conf,3)
+   write(113,*) temp,SSF,kagome_loop,real(N_K,8)/(N_mc*N_kago),triagular_loop,real(N_T,8)/(N_mc*N_tri)
     
    return
 end subroutine Monte_Carlo
@@ -501,7 +518,7 @@ end subroutine Monte_Carlo
 ! Algoritmo de Metropolis para Single Spin Flip
 
 subroutine metropolis
-   use var_annealing, only : Ns,Bi,S,beta
+   use var_annealing, only : Ns,Bi,S,beta,ssf_acc
    !use mtmod, only : igrnd,grnd
    use ranutil, only : ranmar,rand_int
    implicit none
@@ -513,6 +530,7 @@ subroutine metropolis
       dE = -2.0d0*S(i)*Bi(i)
       if (ranmar() < exp(-beta*dE)) then
          call update(i,dE)
+         ssf_acc = ssf_acc + 1
       end if
    end do
 
@@ -521,19 +539,10 @@ end subroutine metropolis
 
 ! ! Salva as energias
 
-! subroutine samples()
-!    use var_annealing, only : iunit_conf,iunit_en
-!    implicit none
-
-!    call En_save(iunit_en,2)
-
-!    return
-! end subroutine samples
-
 ! Salva em arquivo os S's em 0 e 1
 
 subroutine config_S(iunit,flag)
-   use var_annealing, only : Ns,N_mc,N_mssf,rx,ry,mx,my,S,temp,dir2
+   use var_annealing, only : Ns,N_mc,rx,ry,mx,my,S,temp,dir2
    implicit none
    integer, intent(in) :: iunit,flag
    integer :: i
@@ -589,21 +598,6 @@ subroutine En_save(iunit,flag)
    return
 end subroutine En_save
 
-! Salva a configuração final de S's
-
-! subroutine Salva_Final
-!    use var_annealing, only : Ns,S,iunit_fin
-!    implicit none
-!    integer :: i
-
-!    open(unit=iunit_fin,file='ConFin.dat')
-!    do i = 1,Ns
-!       write(iunit_fin,*) S(i)
-!    end do
-!    close(iunit_fin)
-!    return
-! end subroutine Salva_Final
-
 ! Realiza a simulação para diferentes temperaturas
 
 subroutine Annealing
@@ -612,11 +606,12 @@ subroutine Annealing
    integer :: i_temp
 
    open(113, file=trim(dir2) // trim('temps.dat'))
+
+   write(113, *) 'Temp ', ' SSF ', ' Kagome ',' Kag_try ',' Triangular ',' Tri_try'
    do i_temp = 0,N_temp
       temp = Ti*exp(-i_temp/dT)
-      write(113,*) i_temp, temp
-      call flush()
       call Monte_Carlo()
+      call flush()
    end do
    close(113)
 
@@ -627,9 +622,9 @@ end subroutine Annealing
 
 subroutine worm_k
    use ranutil
-   use var_annealing, only : Ns,N_skt,S,Sk,Vk,Rk
+   use var_annealing, only : Ns,N_skt,S,Sk,Vk,Rk,N_K
    implicit none
-   integer :: i,j,k
+   integer :: i,j
    integer :: iworm, cont
    integer :: v_0,ivk,isk
    integer :: v_worm(N_skt), s_worm(Ns)
@@ -677,11 +672,13 @@ subroutine worm_k
 
       if (v_worm(ivk) == 1) then
          if (ivk == v_0) then
-            call metropolis_loop(s_worm)
+            N_K = N_k + 1
+            call metropolis_loop(s_worm, 0)
             exit
          else
+            N_K = N_k + 1
             call corta_rabo(N_skt,ivk,s_worm,s_sequ,v_sequ)
-            call metropolis_loop(s_worm)
+            call metropolis_loop(s_worm, 0)
             exit
          end if
       else
@@ -697,9 +694,9 @@ end subroutine worm_k
 
 subroutine worm_T
    use ranutil
-   use var_annealing, only : Ns,N_skt,S,St,Vt,Rt
+   use var_annealing, only : Ns,N_skt,S,St,Vt,Rt,N_T
    implicit none
-   integer :: i,j,k
+   integer :: i,j
    integer :: iworm, cont
    integer :: v_0,ivk,isk
    integer :: v_worm(N_skt), s_worm(Ns)
@@ -748,11 +745,13 @@ subroutine worm_T
 
       if (v_worm(ivk) == 1) then
          if (ivk == v_0) then
-            call metropolis_loop(s_worm)
+            N_T = N_T + 1
+            call metropolis_loop(s_worm, 1)
             exit
          else
+            N_T = N_T + 1
             call corta_rabo(N_skt,ivk,s_worm,s_sequ,v_sequ)
-            call metropolis_loop(s_worm)
+            call metropolis_loop(s_worm, 1)
             exit
          end if
       else
@@ -789,10 +788,11 @@ end subroutine corta_rabo
 
 ! Algoritmo de Metropolis para Worm
 
-subroutine metropolis_loop(s_worm)
+subroutine metropolis_loop(s_worm, tipo)
    use ranutil
-   use var_annealing, only : Ns,S,Bi,beta,E_tot,Aij,Nviz,jviz
+   use var_annealing, only : Ns,S,Bi,beta,E_tot,Aij,Nviz,jviz,kag_acc,tri_acc
    implicit none
+   integer , intent(in) :: tipo
    integer, dimension(Ns), intent(in) :: s_worm
    integer, dimension(Ns) :: Sn
    integer :: i,j,k
@@ -825,6 +825,11 @@ subroutine metropolis_loop(s_worm)
       S = Sn
       E_tot = En
       Bi = Bi_n
+      if (tipo == 0) then
+         kag_acc = kag_acc + 1
+      else if (tipo == 1) then
+         tri_acc = tri_acc + 1
+      end if
    end if
 
    return
@@ -836,7 +841,6 @@ program main
    
    call inicial
    call Annealing
-   ! call Salva_Final
 
 end program main
 

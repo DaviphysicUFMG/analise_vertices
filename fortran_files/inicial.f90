@@ -32,8 +32,8 @@ subroutine parametros_iniciais
     print*, "Ângulo de rotação do spin:"
     read(*,*) theta
     rede = 1
-    nx = 10
-    ny = 10
+    nx = 6
+    ny = 6
     contorno = 1
 
     a = 1.0d0
@@ -110,7 +110,7 @@ end subroutine diretorios
 ! Cria a rede na configuração Kagome
 
 subroutine kagome
-    use var_inicial, only : a,pi,nx,ny,Ns,rx,ry,mx,my,Lx,Ly,cor,dir2,theta
+    use var_inicial, only : a,pi,nx,ny,Ns,rx,ry,mx,my,Lx,Ly,cor,theta
     implicit none
     integer :: i,j,k,is
     real(8), dimension(:), allocatable :: x0,y0,ex,ey
@@ -171,7 +171,7 @@ end subroutine kagome
 ! Cria a rede na configuração Triangular (Mesma coisa da kagome com theta = 90º)
 
 subroutine triangular
-    use var_inicial, only : a,pi,nx,ny,Ns,rx,ry,mx,my,Lx,Ly,cor,dir2,theta
+    use var_inicial, only : a,pi,nx,ny,Ns,rx,ry,mx,my,Lx,Ly,cor,theta
     implicit none
     integer :: i,j,k,is
     real(8), dimension(:), allocatable :: x0,y0,ex,ey
@@ -231,7 +231,7 @@ end subroutine triangular
 ! Cria a rede Quadrada
 
 subroutine quadrada
-    use var_inicial, only : a,nx,ny,Ns,rx,ry,mx,my,Lx,Ly,cor,dir2,theta,pi
+    use var_inicial, only : a,nx,ny,Ns,rx,ry,mx,my,Lx,Ly,cor,theta,pi
     implicit none
     integer :: i,j,k,is
     real(8), dimension(:), allocatable :: x0,y0,ex,ey
@@ -368,9 +368,10 @@ end subroutine Aij_sem_contorno_x
 subroutine Aij_com_contorno_x
     use var_inicial, only : Ns,N_viz,rx,ry,mx,my,Lx,Ly,rc,dir2,Aij
     implicit none
-    integer :: i,j,ni,nj,nc
-    real(8) :: x,y,dij,D1,D2,iAij,A1,A2
+    integer :: i,j,ni,nj,nc,itroca
+    real(8) :: x,y,dij,D1,D2,A2
     real(8) :: Jnn, Jtroca, D_dip
+    real(8) :: Aijmax
 
     open(11,file=trim(dir2) // 'Aij.dat')
     open(12,file=trim(dir2) // 'Nviz.dat')
@@ -378,7 +379,7 @@ subroutine Aij_com_contorno_x
     allocate(Aij(Ns,Ns))
     Aij = 0.0d0
     N_viz = 0
-    rc = 0.5d0*sqrt(Lx**2 + Ly**2)
+    rc = sqrt(Lx**2 + Ly**2)
     nc = 3
 
     ! Calculo de Jnn e Jtroca
@@ -388,25 +389,45 @@ subroutine Aij_com_contorno_x
     Jtroca = 2.0d0*(5.0d0*D_dip - 7.0d0*D_dip/4.0d0)
     Jnn = 0.5d0*Jtroca + 7*D_dip/4.0d0
 
+    print*, 'Com ou sem interação de troca? (0 pra sem, 1 pra com) '
+    read(*,*) itroca
+    if (itroca == 0) then
+        Jtroca = 0.0d0
+        print*, 'Qual o valor do interação dos primeiros vizinhos? '
+        read(*, *) Jnn
+    end if
+
     print*, 'D_dip: ', D_dip
     print*, 'Jtroca: ', Jtroca
     print*, 'Jnn: ', Jnn
 
+
+    ! Troca !
+    do i = 1,Ns
+        do ni = -1,1
+            do nj = -1,1
+                do j = 1,Ns
+                    x = rx(i) - rx(j) + real(ni*Lx,8)
+                    y = ry(i) - ry(j) + real(nj*Ly,8)
+                    dij = sqrt(x*x + y*y)
+                    if (dij < 1.2d0 .and. dij > 0.8) then
+                        Aij(i,j) = Aij(i,j) - Jtroca*(mx(i)*mx(j) + my(i)*my(j))
+                    end if
+                end do
+            end do
+        end do
+    end do
+
+    ! Dipolar !
     do i = 1,Ns
         do ni = -nc,nc
             do nj = -nc,nc
                 do j = 1,Ns
-                    A1 = 0.0d0
-                    A2 = 0.0d0
                     x = rx(i) - rx(j) + real(ni*Lx,8)
                     y = ry(i) - ry(j) + real(nj*Ly,8)
                     dij = sqrt(x*x + y*y)
-                    ! Troca
-                    if (dij < 1.2 .and. dij > 0.8) then
-                        A1 = mx(i)*mx(j) + my(i)*my(j)
-                    end if
-                    ! Dipolar
-                    if ((dij <= rc).and.(dij>0.1d0)) then
+                    A2 = 0.0d0
+                    if ((dij <= rc).and.(dij>0.4d0)) then
                         N_viz = N_viz + 1
                         dij = 1.0d0/dij
                         x = x*dij
@@ -414,13 +435,27 @@ subroutine Aij_com_contorno_x
                         D1 = mx(i)*mx(j) + my(i)*my(j)
                         D2 = 3.0d0*(mx(i)*x + my(i)*y)*(mx(j)*x + my(j)*y)
                         A2 = (D1 - D2)*dij**3
+                        Aij(i,j) = Aij(i,j) + 0.5d0*D_dip*A2
                     end if
-                    Aij(i,j) = Aij(i,j) - Jtroca*A1 + 0.5d0*D_dip*A2
                 end do
             end do
         end do
     end do
 
+    if (itroca == 0) then
+        x = rx(1) - rx(2)
+        y = ry(1) - ry(2)
+        dij = sqrt(x**2 + y**2)
+        x = x/dij
+        y = y/dij
+        D1 = mx(1)*mx(2) + my(1)*my(2)
+        D2 = 3.0d0*(mx(1)*x + my(1)*y)*(mx(2)*x + my(2)*y)
+        Aijmax = 0.5*(D1 - D2)/dij**3
+        Aijmax = Jnn/Aijmax
+        Aij = Aijmax*Aij
+        print*, 'Jnn :', Aijmax
+    end if
+    
     N_viz = 0
     do i = 1,Ns
         do j = 1,Ns
