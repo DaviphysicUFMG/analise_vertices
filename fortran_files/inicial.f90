@@ -32,8 +32,8 @@ subroutine parametros_iniciais
     print*, "Ângulo de rotação do spin:"
     read(*,*) theta
     rede = 1
-    nx = 6
-    ny = 6
+    nx = 12
+    ny = 12
     contorno = 1
 
     a = 1.0d0
@@ -368,7 +368,7 @@ end subroutine Aij_sem_contorno_x
 subroutine Aij_com_contorno_x
     use var_inicial, only : Ns,N_viz,rx,ry,mx,my,Lx,Ly,rc,dir2,Aij
     implicit none
-    integer :: i,j,ni,nj,nc,itroca
+    integer :: i,j,ni,nj,nc,itroca,jjtroca
     real(8) :: x,y,dij,D1,D2,A2
     real(8) :: Jnn, Jtroca, D_dip
     real(8) :: Aijmax
@@ -399,7 +399,7 @@ subroutine Aij_com_contorno_x
 
     print*, 'D_dip: ', D_dip
     print*, 'Jtroca: ', Jtroca
-    print*, 'Jnn: ', Jnn
+    ! print*, 'Jnn: ', Jnn
 
 
     ! Troca !
@@ -442,18 +442,35 @@ subroutine Aij_com_contorno_x
         end do
     end do
 
+    print*, 'Calcular fator de correção de Jnn? (0 para não, 1 para sim)'
+    read(*,*) jjtroca
     if (itroca == 0) then
-        x = rx(1) - rx(2)
-        y = ry(1) - ry(2)
-        dij = sqrt(x**2 + y**2)
-        x = x/dij
-        y = y/dij
-        D1 = mx(1)*mx(2) + my(1)*my(2)
-        D2 = 3.0d0*(mx(1)*x + my(1)*y)*(mx(2)*x + my(2)*y)
-        Aijmax = 0.5*(D1 - D2)/dij**3
-        Aijmax = Jnn/Aijmax
-        Aij = Aijmax*Aij
-        print*, 'Jnn :', Aijmax
+        if (jjtroca == 1) then
+            x = rx(1) - rx(2)
+            y = ry(1) - ry(2)
+            dij = sqrt(x**2 + y**2)
+            x = x/dij
+            y = y/dij
+            D1 = mx(1)*mx(2) + my(1)*my(2)
+            D2 = 3.0d0*(mx(1)*x + my(1)*y)*(mx(2)*x + my(2)*y)
+            Aijmax = 0.5d0*(D1 - D2)/dij**3
+            Aijmax = Jnn/Aijmax
+            Aij = Aijmax*Aij
+            print*, 'Fator de Correção de Jnn :', Aijmax
+        else if (jjtroca == 0) then
+            print*, 'Entre com o fator de correção de Jnn.'
+            read(*,*) Aijmax
+            Aij = Aijmax*Aij
+
+            x = rx(1) - rx(2)
+            y = ry(1) - ry(2)
+            dij = sqrt(x**2 + y**2)
+            x = x/dij
+            y = y/dij
+            D1 = mx(1)*mx(2) + my(1)*my(2)
+            D2 = 3.0d0*(mx(1)*x + my(1)*y)*(mx(2)*x + my(2)*y)
+            print*, 'Interação vizinho próximo = ', abs(Aijmax*(0.5d0*(D1 - D2)/dij**3))
+        end if
     end if
     
     N_viz = 0
@@ -636,12 +653,12 @@ subroutine output
     write(13,*) theta_h,"   !Theta para histerese"
     write(13,*) 10000,"    !N_mc"
     write(13,*) 30,"    !N_temp"
-    write(13,*) 10.0,"    !Temperatura inicial"
-    write(13,*) 0.1,"    !Temperatura final"
+    write(13,*) 500.0,"    !Temperatura inicial"
+    write(13,*) 0.15,"    !Temperatura final"
     write(13,*) N_svt
     write(13,*) 10, "    !N_sin"
-    write(13,*) 1,"    !N_kago"
-    write(13,*) 1,"    !N_tri"
+    write(13,*) 10,"    !N_kago"
+    write(13,*) 10,"    !N_tri"
     write(13,*) 500,"    !N_mssf"
     write(13,*) 1,"   S ; 1->Aleatorio, 2->Ultima config"
     write(13,*) 0., " !Bmax"

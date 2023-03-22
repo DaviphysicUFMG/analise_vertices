@@ -370,17 +370,54 @@ subroutine momentos
             !d3(j) = My(k)
             d4(j) = M(k)
         end do
-        call jackknife1(d1,E,errE,Cvmed,errCv,bt)
-
-        call jackknife2(d4,M1,errM,Sucmed,errSuc,bt)
+        !call jackknife1(d1,E,errE,Cvmed,errCv,bt)
+        !call jackknife2(d4,M1,errM,Sucmed,errSuc,bt)
+        call ener_calc(d1,E,errE,Cvmed,errCv,bt)
+        call magn_calc(d4,M1,errM,Sucmed,errSuc,bt)
         write(3,*) 1.0d0/bt,E,errE,Cvmed,errCv
         write(4,*) 1.0d0/bt,M1,errM,Sucmed,errSuc
     end do
     close(3)
+    close(4)
 
     return
-
 end subroutine momentos
+
+subroutine ener_calc(data, E, errE, Cvmed, errCv, bt)
+    use var_FS, only: Ns, N_mc
+    implicit none
+    real(8), dimension(N_mc), intent(in) :: data
+    real(8), intent(in) :: bt
+    real(8), intent(out) :: E, errE, Cvmed, errCv
+    real(8) :: E2, Cvi, dE
+
+    call avevar(N_mc, data, E, dE)
+    E2 = sum(data*data)/real(N_mc, 8)
+    Cvmed = bt*bt*(E2 - E**2)/real(Ns, 8)
+    E = E/real(Ns,8)
+    errE = dE
+    errCv = 0.0d0
+
+    return
+end subroutine ener_calc
+
+subroutine magn_calc(data, M, errM, Sucmed, errSuc, bt)
+    use var_FS, only: Ns, N_mc
+    implicit none
+    real(8), dimension(N_mc), intent(in) :: data
+    real(8), intent(in) :: bt
+    real(8), intent(out) :: M, errM, Sucmed, errSuc
+    real(8) :: M2, Suc, dM
+
+    call avevar(N_mc, data, M, dM)
+    M2 = sum(data*data)/real(N_mc, 8)
+    Sucmed = bt*(M2 - M**2)/real(Ns, 8)
+    M = M/real(Ns, 8)
+    errM = dM
+    errSuc = 0.0d0
+
+    return
+end subroutine magn_calc
 
 subroutine jackknife1(d1,E,errE,Cvmed,errCv,bt)
     use var_FS, only: Ns,N_mc
@@ -463,43 +500,6 @@ subroutine jackknife2(d4,M,errM,Sucmed,errSuc,bt)
     errM = sqrt(errM)/real(Ns,8)
     return
 end subroutine jackknife2
-
-! subroutine bootstrap
-!     use ranutil
-!     use var_FS
-!     implicit none
-!     integer, parameter :: N_BS = 500
-!     integer :: i,j,k,k1,k2,o
-!     real(8) :: E,errE,Cvmed,errCv,bt
-!     real(8), dimension(:), allocatable :: BS_sample,E1,E2,Cv
-    
-!     call initrandom()
-!     allocate(BS_sample(N_mc),E1(N_BS),E2(N_BS))
-    
-!     open(4,file='bootstrap.dat')
-!     write(4,*) ' Temp ',' En ',' dE ',' Cv ', ' dCv '
-
-!     do i = 1,N_temp
-!         bt = beta(i)
-!         k1 = (i-1)*N_mc
-!         k2 = i*N_mc
-!         do j = 1,N_BS
-!             do o = 1,N_mc
-!                 k = rand_int(k1,k2)
-!                 BS_sample(o) = En(k)
-!             end do
-!             E1(j) = sum(BS_sample)/real(N_mc,8)
-!             E2(j) = sum(BS_sample)/real(N_mc,8)
-!         end do
-!         do k = 
-
-
-
-!         write(4,*) 1.0d0/bt,E,errE,Cvmed,errCv
-!     end do
-
-
-! end subroutine bootstrap
 
 subroutine avevar(N,d1,ave,var)
     implicit none

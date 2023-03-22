@@ -464,7 +464,7 @@ subroutine Monte_Carlo()
    kag_acc = 0
    tri_acc = 0
    ! Termaliza
-   print*, 'Termalizando em : T = ', temp
+   ! print*, 'Termalizando em : T = ', temp
    do imc = 1,N_mc
       do smc = 1,N_sin
          call metropolis
@@ -476,8 +476,7 @@ subroutine Monte_Carlo()
          call worm_t
       end do
    end do
-   print*, 'Termalizou em : T = ', temp
-
+   ! print*, 'Termalizou em : T = ', temp
    ! call config_S(iunit_conf,0)
    call En_save(iunit_en,1)
 
@@ -505,13 +504,13 @@ subroutine Monte_Carlo()
       ! end if
    end do
 
-   SSF = real(ssf_acc,8)/(N_mc*N_sin*Ns)
-   kagome_loop = real(kag_acc,8)/(N_mc*N_kago)
-   triagular_loop = real(tri_acc,8)/(N_mc*N_tri)
+   SSF = real(ssf_acc, 8)/(N_mc*N_sin*Ns)
+   kagome_loop = real(kag_acc, 8)/(N_mc*N_kago)
+   triagular_loop = real(tri_acc, 8)/(N_mc*N_tri)
 
    ! call config_S(iunit_conf,3)
    write(113,*) temp,SSF,kagome_loop,real(N_K,8)/(N_mc*N_kago),triagular_loop,real(N_T,8)/(N_mc*N_tri)
-    
+   call flush()
    return
 end subroutine Monte_Carlo
 
@@ -537,7 +536,7 @@ subroutine metropolis
    return
 end subroutine metropolis
 
-! ! Salva as energias
+!! Salva as energias
 
 ! Salva em arquivo os S's em 0 e 1
 
