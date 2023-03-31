@@ -3,3 +3,11 @@ notebooks/energias/
 notebooks/graficos/
 notebooks/magnet/
 notebooks/parquets/
+fortran_files/*.mod
+fortran_files/ground state/Aij
+fortran_files/ground state/Conf
+fortran_files/ground state/Nviz
+fortran_files/ground state/Resultados
+fortran_files/ground state/Vert
+fortran_files/ground state/*.mod
+*.mod

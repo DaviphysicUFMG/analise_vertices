@@ -1,0 +1,5 @@
+! Parâmetros da rede a ser simulada !
+0.0,             !dTheta: Rotação dos spins
+12,              !Nx: Repetições da célular unitária em x
+12,              !Ny: Repetições da célular unitária em y
+1,               !Contorno: 1 -> com contorno, 2 -> sem contorno
