@@ -143,11 +143,12 @@ end module ranutil
    !                                                                 !
    !-----------------------------------------------------------------!
  
-
 module var_inicial
-    integer :: rede,contorno
+    integer :: rede,contorno,itroca,nc
     integer :: nx,ny,Ns,N_viz     !! ny deve ser par !!
     integer :: N_k,N_T,N_svt,N_svk
+    integer :: N_mc,N_temp,N_single,N_kago,N_tri
+    real(8) :: Ti,Tf
     real(8) :: a,Lx,Ly,rc,theta
     character(200) :: dir1,dir2
     
@@ -166,27 +167,36 @@ module var_annealing
     real(8), dimension(:), allocatable :: rx,ry,mx,my
     real(8) :: Ti,Tf,dT,D
     real(8) :: E_tot,Temp,beta
-    character(600) :: dir1,dir2,isimula
+    character(600) :: dir1,dir3,isimula
 
     integer, parameter :: iunit_conf = 10, iunit_en = 20, iunit_fin = 30
 end module var_annealing
 
 subroutine parametros_iniciais
-    use var_inicial, only : contorno,nx,ny,a,theta,rc
+    use var_inicial, only : contorno,itroca,nc,nx,ny,a,theta,N_mc,N_temp,Ti,Tf,N_single,N_kago,N_tri
     implicit none
     character(111) :: nada
 
     open(1, file="parametros_rede.dat")
+
     read(1, *) nada
     read(1, *) theta, nada
     read(1, *) Nx, nada
     read(1, *) Ny, nada
     read(1, *) contorno, nada
+    read(1, *) itroca, nada
+    read(1, *) nc, nada
+    read(1, *) N_mc, nada
+    read(1, *) N_temp, nada
+    read(1, *) Ti, nada
+    read(1, *) Tf, nada
+    read(1, *) N_single, nada
+    read(1, *) N_kago, nada
+    read(1, *) N_tri, nada
 
     close(1)
 
     a = 1.0d0
-    rc = a
     return
 end subroutine parametros_iniciais
 
@@ -207,6 +217,7 @@ subroutine unit_cel
         call Aij_sem_contorno_x
     end if
 
+    return
 end subroutine unit_cel
 
 subroutine diretorios(tipo,nx,ny,cont,theta)
@@ -323,10 +334,10 @@ subroutine config
 end subroutine config
 
 subroutine Aij_sem_contorno_x
-    use var_inicial, only : Ns,N_viz,Lx,Ly,rc,dir2,Aij
+    use var_inicial, only : Ns,N_viz,Lx,Ly,rc,dir2,Aij,itroca
     use var_annealing, only : rx,ry,mx,my
     implicit none
-    integer :: i,j,itroca
+    integer :: i,j
     real(8) :: x,y,dij,D1,D2,A2
     real(8) :: Jnn, Jtroca, D_dip
 
@@ -338,7 +349,6 @@ subroutine Aij_sem_contorno_x
     N_viz = 0
     rc = sqrt(Lx**2 + Ly**2)
 
-    itroca = 0
     if (itroca == 0) then
         Jtroca = 0.0d0
         Jnn = 5.7142857142857189d0
@@ -399,10 +409,10 @@ subroutine Aij_sem_contorno_x
 end subroutine Aij_sem_contorno_x
 
 subroutine Aij_com_contorno_x
-    use var_inicial, only : Ns,N_viz,Lx,Ly,rc,dir2,Aij
+    use var_inicial, only : Ns,N_viz,Lx,Ly,rc,dir2,Aij,itroca,nc
     use var_annealing, only : rx,ry,mx,my
     implicit none
-    integer :: i,j,ni,nj,nc,itroca
+    integer :: i,j,ni,nj
     real(8) :: x,y,dij,D1,D2,A2
     real(8) :: Jnn, Jtroca, D_dip
 
@@ -413,12 +423,11 @@ subroutine Aij_com_contorno_x
     Aij = 0.0d0
     N_viz = 0
     rc = sqrt(Lx**2 + Ly**2)
-    nc = 3
 
-    itroca = 0
     if (itroca == 0) then
+        D_dip = 1.0d0
         Jtroca = 0.0d0
-        Jnn = 5.7142857142857189d0
+        Jnn = 5.7142857142857189
     else if (itroca == 1) then
         D_dip = 1.0d0
         Jtroca = 2.0d0*(5.0d0*D_dip - 7.0d0*D_dip/4.0d0)
@@ -466,7 +475,7 @@ subroutine Aij_com_contorno_x
     end do
 
     Aij = Jnn*Aij
- 
+
     N_viz = 0
     do i = 1,Ns
         do j = 1,Ns
@@ -613,7 +622,7 @@ subroutine vertice_K
 end subroutine vertice_K
 
 subroutine output
-    use var_inicial, only: Ns,N_viz,N_svt,N_svk,N_k,N_T,dir2 
+    use var_inicial, only: Ns,N_viz,N_svt,N_svk,N_k,N_T,dir2,N_mc,N_temp,Ti,Tf,N_single,N_kago,N_tri
     implicit none
 
     call config
@@ -622,24 +631,26 @@ subroutine output
     write(13,*) 1.0d0, "! Constante Dipolar"
     write(13,*) Ns,"   !Ns"
     write(13,*) N_viz,"   !N_viz"
-    write(13,*) 10000,"    !N_mc"
-    write(13,*) 30,"    !N_temp"
-    write(13,*) 500.0,"    !Temperatura inicial"
-    write(13,*) 0.15,"    !Temperatura final"
+    write(13,*) N_mc,"    !N_mc"
+    write(13,*) N_temp,"    !N_temp"
+    write(13,*) Ti,"    !Temperatura inicial"
+    write(13,*) Tf,"    !Temperatura final"
     write(13,*) N_svt
-    write(13,*) 10, "    !N_sin"
-    write(13,*) 10,"    !N_kago"
-    write(13,*) 10,"    !N_tri"
+    write(13,*) N_single, "    !N_sin"
+    write(13,*) N_kago,"    !N_kago"
+    write(13,*) N_tri,"    !N_tri"
     write(13,*) 500,"    !N_mssf"
     write(13,*) 1,"   S ; 1->Aleatorio, 2->Ultima config"
     close(13)
     if (N_svt .ne. N_svk) then
         print*, 'Erro em N_K e N_T',N_K,N_T
     end if
+    return 
 end subroutine output
 
 subroutine inicializa_rede
     use var_inicial, only: Aij,xt,yt,xk,yk
+    use var_annealing, only : N_temp,Ti,Tf,dT,iunit_en
 
     call parametros_iniciais
     call unit_cel
@@ -649,10 +660,575 @@ subroutine inicializa_rede
 
     deallocate(Aij,xt,yt,xk,yk)
 
+    call ler_input(1)
+    call ler_config(2)
+    call ler_Aij(3)
+    call ler_Nviz(4)
+    call ler_Vertices(5)
+
+
+    call inicia_Bi
+    call diretorios_MC
+    call En_save(iunit_en,0)
+    dT = -N_temp/log(Tf/Ti)
+
     return
 end subroutine inicializa_rede
 
-program inicial_v2
-    call inicializa_rede
-end program inicial_v2
+!----------------------------------------------------------------------------!
 
+subroutine ler_input(iunit)
+    use ranutil, only : initrandom
+    use var_inicial, only : dir2
+    use var_annealing, only : Ns,N_viz,N_mc,N_temp,Ti,Tf,N_skt,N_kago,N_tri,N_mssf,N_sin,IniCon,D
+    implicit none
+    integer, intent(in) :: iunit
+
+    open(unit=iunit,file=trim(dir2) // 'input.dat',status='old',action='read')
+    read(iunit,*) D
+    read(iunit,*) Ns
+    read(iunit,*) N_viz
+    read(iunit,*) N_mc
+    read(iunit,*) N_temp
+    read(iunit,*) Ti
+    read(iunit,*) Tf
+    read(iunit,*) N_skt
+    read(iunit,*) N_sin
+    read(iunit,*) N_kago
+    read(iunit,*) N_tri
+    read(iunit,*) N_mssf
+    read(iunit,*) IniCon
+    close(iunit)
+
+    call initrandom()
+
+    N_mssf = N_mc/N_mssf
+
+    return
+end subroutine ler_input
+ 
+subroutine ler_config(iunit)
+    use ranutil
+    use var_inicial, only : dir2
+    use var_annealing, only : Ns,S,IniCon
+    implicit none
+    integer, intent(in) :: iunit
+    integer :: i
+
+    allocate(S(Ns))
+
+    if (IniCon == 0) then      !Configuração Inicial com Tudo S = 1
+        S = 1
+    else if (IniCon == 1) then !Configuração Inicial Aleatória
+        S = 1
+        do i = 1,Ns
+            if (ranmar()<0.5d0) then
+                S(i) = -1
+            end if
+        end do
+    else if (IniCon == 2) then !Configuração Inicial Igual à Final Anterior
+        open(unit=iunit,file=trim(dir2) // 'ConFin.dat',status='old',action='read')
+        do i = 1,Ns
+            read(iunit,*) S(i)
+        end do
+    end if
+    return
+end subroutine ler_config
+
+subroutine ler_Aij(iunit)
+    use var_inicial, only : dir2
+    use var_annealing, only : N_viz,Aij,jviz
+    implicit none
+    integer, intent(in) :: iunit
+    integer :: i
+
+    allocate(Aij(N_viz),jviz(N_viz))
+    open(unit=iunit,file=trim(dir2) // 'Aij.dat',status='old',action='read')
+    do i = 1,N_viz
+        read(iunit,*) jviz(i),Aij(i)
+    end do
+    close(iunit)
+
+    return
+end subroutine ler_Aij
+
+subroutine ler_Nviz(iunit)
+    use var_inicial, only : dir2
+    use var_annealing, only : Ns,Nviz
+    implicit none
+    integer, intent(in) :: iunit
+    integer :: i
+
+    allocate(Nviz(0:Ns))
+    open(unit=iunit,file=trim(dir2) // 'Nviz.dat',status='old',action='read')
+
+    Nviz(0) = 0
+    do i = 1,Ns
+        read(iunit,*) Nviz(i)
+    end do
+    close(iunit)
+
+    return
+end subroutine ler_Nviz
+
+subroutine ler_Vertices(iunit)
+    use var_inicial, only : dir2
+    use var_annealing, only : N_skt,Sk,Vk,Rk,St,Vt,Rt
+    implicit none
+    integer, intent(in) :: iunit
+    integer :: i
+
+    !-----------------------------------------------------------------!
+
+    allocate(St(N_skt),Vt(N_skt),Rt(N_skt))
+    open(unit=iunit,file=trim(dir2) // "vertice_T.dat",status='old',action='read')
+    do i = 1,N_skt
+        read(iunit,*) Vt(i),Rt(i)
+    end do
+    do i = 1,N_skt
+        read(iunit,*) St(i)
+    end do
+    close(iunit)
+
+    !-----------------------------------------------------------------!
+
+    allocate(Sk(N_skt),Vk(N_skt),Rk(N_skt))
+    open(unit=iunit,file=trim(dir2) // "vertice_K.dat",status='old',action='read')
+    do i = 1,N_skt
+        read(iunit,*) Vk(i),Rk(i)
+    end do
+    do i = 1,N_skt
+        read(iunit,*) Sk(i)
+    end do
+    close(iunit)
+
+    call flush()
+    return
+end subroutine ler_Vertices
+
+subroutine inicia_Bi
+    use var_annealing, only : Ns,Nviz,jviz,Aij,Bi,S,E_tot
+    implicit none
+    integer :: i,j,k
+
+    allocate(Bi(Ns))
+
+    E_tot = 0.0d0
+    Bi(:) = 0.0d0
+    do i = 1,Ns
+        do k = Nviz(i-1)+1,Nviz(i)
+            j = jviz(k)
+            Bi(i) = Bi(i) + S(j)*Aij(k)
+        end do
+        E_tot = E_tot + S(i)*Bi(i)
+    end do
+    E_tot = 0.5d0*E_tot
+
+    return
+end subroutine inicia_Bi
+
+subroutine diretorios_MC
+    use var_inicial, only : dir2
+    use var_annealing, only : dir1,dir3,isimula
+    implicit none
+    integer :: i
+    logical :: direx
+
+    dir1 = trim(dir2) // 'Resultados/'
+    inquire(file=dir1,exist=direx)
+    if (direx .eqv. .false.) then
+        call system("mkdir " // trim(dir1))
+    end if
+
+    direx = .true.
+    i = 0
+    do while(direx .eqv. .true.)
+        i = i + 1
+        write(dir3,"('Resultados/Simula_',I4.4,'/')") i
+        inquire(file=trim(dir2) // dir3,exist=direx)
+    end do
+    write(isimula,"(I4.4)") i
+    call system("mkdir " // trim(dir2) // trim(dir3))
+
+    return
+end subroutine diretorios_MC
+
+subroutine update(i,dE)
+    use var_annealing, only : Nviz,jviz,Aij,Bi,S,E_tot
+    implicit none
+    integer, intent(in) :: i
+    real(8), intent(in) :: dE
+    integer :: j,k
+    real(8) :: dBi
+
+    do k = Nviz(i-1)+1,Nviz(i)
+        j = jviz(k)
+        dBi = -2.0d0*S(i)*Aij(k)
+        Bi(j) = Bi(j) + dBi
+    end do
+
+    S(i) = -S(i)
+    E_tot = E_tot + dE
+
+    return
+end subroutine update
+
+subroutine Monte_Carlo()
+    use var_annealing, only : N_mc,beta,iunit_conf,iunit_en, &
+                                N_sin,N_kago,N_tri,temp,ssf_acc,kag_acc,tri_acc,Ns,N_K,N_T
+    implicit none
+    integer :: imc,kmc,tmc,smc
+    real(8) :: SSF, kagome_loop, triagular_loop
+
+    beta = 1.0d0/temp
+
+    kmc = 0
+
+    do imc = 1,N_mc
+        do smc = 1,N_sin
+            call metropolis
+        end do
+        do kmc = 1,N_kago
+            call worm_k
+        end do
+        do tmc = 1,N_tri
+            call worm_t
+        end do
+    end do
+    call En_save(iunit_en,1)
+
+    ssf_acc = 0
+    kag_acc = 0
+    tri_acc = 0
+    N_K = 0
+    N_T = 0
+
+    do imc = 1,N_mc
+        do smc = 1,N_sin
+            call metropolis
+        end do
+        do kmc = 1,N_kago
+            call worm_k
+        end do
+        do tmc = 1,N_tri
+            call worm_t
+        end do
+        call En_save(iunit_en,2)
+        ! if (mod(imc,N_mssf).eq.0) then
+        ! call config_S(iunit_conf,1)
+        ! end if
+    end do
+
+    SSF = real(ssf_acc, 8)/(N_mc*N_sin*Ns)
+    kagome_loop = real(kag_acc, 8)/(N_mc*N_kago)
+    triagular_loop = real(tri_acc, 8)/(N_mc*N_tri)
+
+    ! call config_S(iunit_conf,3)
+    write(113,*) temp,SSF,kagome_loop,real(N_K,8)/(N_mc*N_kago),triagular_loop,real(N_T,8)/(N_mc*N_tri)
+    call flush()
+    return
+end subroutine Monte_Carlo
+
+subroutine metropolis
+use var_annealing, only : Ns,Bi,S,beta,ssf_acc
+use ranutil, only : ranmar,rand_int
+implicit none
+integer :: i,im
+real(8) :: dE
+
+do im = 1,Ns
+    i = rand_int(1,Ns)
+    dE = -2.0d0*S(i)*Bi(i)
+    if (ranmar() < exp(-beta*dE)) then
+        call update(i,dE)
+        ssf_acc = ssf_acc + 1
+    end if
+end do
+
+return
+end subroutine metropolis
+
+subroutine config_S(iunit,flag)
+    use var_inicial, only : dir2
+    use var_annealing, only : Ns,N_mc,rx,ry,mx,my,S,temp,dir3
+    implicit none
+    integer, intent(in) :: iunit,flag
+    integer :: i
+    character(60) :: nome
+
+    if (flag == 0) then
+        ! Inicia a configuração !
+        write(nome,"('config_temp_',f8.4,'.dat')") temp
+        open(unit=iunit,file=trim(dir2) // trim(dir3) // trim(nome))
+        write(iunit,*) Ns, N_mc
+    else if (flag == 1) then
+        do i = 1,Ns
+            write(iunit,*) (S(i)+1)/2
+        end do
+    else if (flag == 2) then
+        write(iunit,*) Ns
+        write(iunit,*) ' '
+        do i = 1,Ns
+            write(iunit,"(4(2x,f10.5))") rx(i),ry(i),S(i)*mx(i),S(i)*my(i)
+        end do
+    else if (flag == 3) then
+        call flush()
+        close(iunit)
+    end if
+
+    return
+end subroutine config_S
+
+subroutine En_save(iunit,flag)
+    use var_inicial, only : dir2
+    use var_annealing, only : Ns,N_mc,N_temp,temp,E_tot,dir3,S,mx,my,isimula
+    implicit none
+    integer, intent(in) :: iunit,flag
+
+    if (flag == 0) then
+        open(unit=iunit,file=(trim(dir2) // trim(dir3) // 'energia' // trim(isimula) // '.dat'))
+        write(iunit,*) Ns,N_mc,N_temp
+    else if (flag == 1) then
+        write(iunit,*) temp
+    else if (flag == 2) then
+        write(iunit,*) E_tot,sum(S*mx),sum(S*my)
+    else if (flag == 3) then
+        call flush()
+        close(iunit)
+    end if
+
+    return
+end subroutine En_save
+
+subroutine Annealing
+    use var_inicial, only : dir2
+    use var_annealing, only : N_temp,Ti,dT,temp,dir3
+    implicit none
+    integer :: i_temp
+
+    open(113, file=trim(dir2) // trim(dir3) // trim('temps.dat'))
+
+    write(113, *) 'Temp ', ' SSF ', ' Kagome ',' Kag_try ',' Triangular ',' Tri_try'
+    do i_temp = 0,N_temp
+        temp = Ti*exp(-i_temp/dT)
+        call Monte_Carlo()
+        call flush()
+    end do
+    close(113)
+
+    return
+end subroutine Annealing
+
+subroutine worm_k
+    use ranutil
+    use var_annealing, only : Ns,N_skt,S,Sk,Vk,Rk,N_K
+    implicit none
+    integer :: i,j
+    integer :: iworm, cont
+    integer :: v_0,ivk,isk
+    integer :: v_worm(N_skt), s_worm(Ns)
+    integer :: v_sequ(N_skt), s_sequ(N_skt)
+    integer :: pool(3)
+
+    v_worm = 0
+    s_worm = 0
+    v_sequ = 0
+    s_sequ = 0
+
+    v_0 = int(N_skt*ranmar()/3.0d0)+1
+    !i=rand_int(0,100)
+    ivk = v_0
+    v_worm(ivk) = 1
+    v_sequ(1) = ivk
+    iworm = 0
+
+    do while (iworm <= N_skt)
+        iworm = iworm + 1
+        cont = 0
+        pool = 0
+
+        do i = 3*(ivk-1)+1,3*(ivk-1)+3
+            j = Vk(i)
+            if (Rk(i)*S(j) < 0.0d0) then
+                cont = cont + 1
+                pool(cont) = j
+            end if
+        end do
+
+        if (cont /= 0) then
+            isk = pool(int(cont*ranmar())+1)
+            s_worm(isk) = 1
+            s_sequ(iworm) = isk
+        else
+            exit
+        end if
+
+        if (Sk(2*(isk-1)+1) /= ivk) then
+            ivk = Sk(2*(isk-1)+1)
+        else
+            ivk = Sk(2*(isk-1)+2)
+        end if
+
+        if (v_worm(ivk) == 1) then
+            if (ivk == v_0) then
+                N_K = N_k + 1
+                call metropolis_loop(s_worm, 0)
+                exit
+            else
+                N_K = N_k + 1
+                call corta_rabo(N_skt,ivk,s_worm,s_sequ,v_sequ)
+                call metropolis_loop(s_worm, 0)
+                exit
+            end if
+        else
+            v_worm(ivk) = 1
+            v_sequ(iworm+1) = ivk
+        end if
+    end do
+
+    return
+end subroutine worm_k
+
+subroutine worm_T
+    use ranutil
+    use var_annealing, only : Ns,N_skt,S,St,Vt,Rt,N_T
+    implicit none
+    integer :: i,j
+    integer :: iworm, cont
+    integer :: v_0,ivk,isk
+    integer :: v_worm(N_skt), s_worm(Ns)
+    integer :: v_sequ(N_skt), s_sequ(N_skt)
+    integer :: pool(6)
+
+
+    v_worm = 0
+    s_worm = 0
+    v_sequ = 0
+    s_sequ = 0
+
+    v_0 = int(N_skt*ranmar()/6.0d0)+1
+    !i=rand_int(0,100)
+    ivk = v_0
+    v_worm(ivk) = 1
+    v_sequ(1) = ivk
+    iworm = 0
+
+    do while (iworm <= N_skt)
+        iworm = iworm + 1
+        cont = 0
+        pool = 0
+
+        do i = 6*(ivk-1)+1,6*(ivk-1)+6
+            j = Vt(i)
+            if (Rt(i)*S(j) < 0.0d0) then
+                cont = cont + 1
+                pool(cont) = j
+            end if
+        end do
+
+        if (cont /= 0) then
+            isk = pool(int(cont*ranmar())+1)
+            s_worm(isk) = 1
+            s_sequ(iworm) = isk
+        else
+            exit
+        end if
+
+        if (St(2*(isk-1)+1) /= ivk) then
+            ivk = St(2*(isk-1)+1)
+        else
+            ivk = St(2*(isk-1)+2)
+        end if
+
+        if (v_worm(ivk) == 1) then
+            if (ivk == v_0) then
+                N_T = N_T + 1
+                call metropolis_loop(s_worm, 1)
+                exit
+            else
+                N_T = N_T + 1
+                call corta_rabo(N_skt,ivk,s_worm,s_sequ,v_sequ)
+                call metropolis_loop(s_worm, 1)
+                exit
+            end if
+        else
+            v_worm(ivk) = 1
+            v_sequ(iworm+1) = ivk
+        end if
+    end do
+
+
+    return
+end subroutine worm_T
+
+subroutine corta_rabo(N,ivk,s_worm,s_sequ,v_sequ)
+    use var_annealing, only : Ns
+    implicit none
+    integer, intent(in) :: N,ivk
+    integer, dimension(N), intent(in) :: s_sequ,v_sequ
+    integer, dimension(Ns), intent(inout) :: s_worm
+    integer :: i,j
+
+    do i = 1,N
+        if (v_sequ(i) /= ivk) then
+            j = s_sequ(i)
+            s_worm(j) = 0
+        else if (v_sequ(i) == ivk) then
+            return
+        end if
+    end do
+
+    return
+end subroutine corta_rabo
+
+subroutine metropolis_loop(s_worm, tipo)
+    use ranutil
+    use var_annealing, only : Ns,S,Bi,beta,E_tot,Aij,Nviz,jviz,kag_acc,tri_acc
+    implicit none
+    integer , intent(in) :: tipo
+    integer, dimension(Ns), intent(in) :: s_worm
+    integer, dimension(Ns) :: Sn
+    integer :: i,j,k
+    real(8), dimension(Ns) :: Bi_n
+    real(8) :: E0,En,dE
+
+    Sn = S
+    do i = 1,Ns
+        if (s_worm(i)==1) then
+            Sn(i) = -Sn(i)
+        end if
+    end do
+
+    E0 = E_tot
+    En = 0.0d0
+
+    Bi_n = 0.0d0
+    do i = 1,Ns
+        do k = Nviz(i-1)+1,Nviz(i)
+            j = jviz(k)
+            Bi_n(i) = Bi_n(i) + Sn(j)*Aij(k)
+        end do
+        En = En + Sn(i)*Bi_n(i)
+    end do
+
+    En = 0.5d0*En
+    dE = En - E0
+
+    if (ranmar() < exp(-beta*dE)) then
+        S = Sn
+        E_tot = En
+        Bi = Bi_n
+        if (tipo == 0) then
+            kag_acc = kag_acc + 1
+        else if (tipo == 1) then
+            tri_acc = tri_acc + 1
+        end if
+    end if
+
+    return
+end subroutine metropolis_loop
+ 
+program main
+    call inicializa_rede
+    call Annealing
+end program main
