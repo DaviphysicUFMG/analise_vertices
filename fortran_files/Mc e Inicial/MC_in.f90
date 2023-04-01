@@ -1,3 +1,20 @@
+
+   !-----------------------------------------------------------------!
+   !                          MARSAGLIA                              !
+   ! Usage example:                                                  !
+   !    use ranutil                                                  !
+   !    ...                                                          !
+   !    integer :: i                                                 !
+   !    real(rk) :: x,g                                              !
+   !    ...                                                          !                                           !
+   !    call initrandom()                                            !
+   !    x=ranmar()                                                   !
+   !    x=rand_real(25.,59.)                                         !
+   !    i=rand_int(0,100)                                            !
+   !    ...                                                          !
+   !                                                                 !
+   !-----------------------------------------------------------------!
+
 module ranmod1
     integer,parameter::i4b=selected_int_kind(9)
     integer,parameter::k15=selected_int_kind(15)
@@ -127,22 +144,6 @@ module ranutil
 
 end module ranutil
  
-   !-----------------------------------------------------------------!
-   !                          MARSAGLIA                              !
-   ! Usage example:                                                  !
-   !    use ranutil                                                  !
-   !    ...                                                          !
-   !    integer :: i                                                 !
-   !    real(rk) :: x,g                                              !
-   !    ...                                                          !                                           !
-   !    call initrandom()                                            !
-   !    x=ranmar()                                                   !
-   !    x=rand_real(25.,59.)                                         !
-   !    i=rand_int(0,100)                                            !
-   !    ...                                                          !
-   !                                                                 !
-   !-----------------------------------------------------------------!
- 
 module var_inicial
     integer :: rede,contorno,itroca,nc
     integer :: nx,ny,Ns,N_viz     !! ny deve ser par !!
@@ -203,7 +204,6 @@ end subroutine parametros_iniciais
 subroutine unit_cel
     use var_inicial, only : nx,ny,contorno,theta
     implicit none
-    ! logical :: direx
     character(20) :: tipo
 
     tipo = 'Kagome'
@@ -670,6 +670,7 @@ subroutine inicializa_rede
     call inicia_Bi
     call diretorios_MC
     call En_save(iunit_en,0)
+
     dT = -N_temp/log(Tf/Ti)
 
     return
@@ -875,15 +876,13 @@ end subroutine update
 
 subroutine Monte_Carlo()
     use var_annealing, only : N_mc,beta,iunit_conf,iunit_en, &
-                                N_sin,N_kago,N_tri,temp,ssf_acc,kag_acc,tri_acc,Ns,N_K,N_T
+                                N_sin,N_kago,N_tri,temp,ssf_acc, &
+                                kag_acc,tri_acc,Ns,N_K,N_T,N_mssf
     implicit none
     integer :: imc,kmc,tmc,smc
     real(8) :: SSF, kagome_loop, triagular_loop
 
     beta = 1.0d0/temp
-
-    kmc = 0
-
     do imc = 1,N_mc
         do smc = 1,N_sin
             call metropolis
@@ -895,7 +894,9 @@ subroutine Monte_Carlo()
             call worm_t
         end do
     end do
+
     call En_save(iunit_en,1)
+    call config_S(iunit_conf, 0)
 
     ssf_acc = 0
     kag_acc = 0
@@ -914,16 +915,16 @@ subroutine Monte_Carlo()
             call worm_t
         end do
         call En_save(iunit_en,2)
-        ! if (mod(imc,N_mssf).eq.0) then
-        ! call config_S(iunit_conf,1)
-        ! end if
+        if (mod(imc,N_mssf).eq.0) then
+            call config_S(iunit_conf,1)
+        end if
     end do
 
     SSF = real(ssf_acc, 8)/(N_mc*N_sin*Ns)
     kagome_loop = real(kag_acc, 8)/(N_mc*N_kago)
     triagular_loop = real(tri_acc, 8)/(N_mc*N_tri)
 
-    ! call config_S(iunit_conf,3)
+    call config_S(iunit_conf,3)
     write(113,*) temp,SSF,kagome_loop,real(N_K,8)/(N_mc*N_kago),triagular_loop,real(N_T,8)/(N_mc*N_tri)
     call flush()
     return
@@ -957,7 +958,6 @@ subroutine config_S(iunit,flag)
     character(60) :: nome
 
     if (flag == 0) then
-        ! Inicia a configuração !
         write(nome,"('config_temp_',f8.4,'.dat')") temp
         open(unit=iunit,file=trim(dir2) // trim(dir3) // trim(nome))
         write(iunit,*) Ns, N_mc
@@ -1036,7 +1036,6 @@ subroutine worm_k
     s_sequ = 0
 
     v_0 = int(N_skt*ranmar()/3.0d0)+1
-    !i=rand_int(0,100)
     ivk = v_0
     v_worm(ivk) = 1
     v_sequ(1) = ivk
@@ -1107,7 +1106,6 @@ subroutine worm_T
     s_sequ = 0
 
     v_0 = int(N_skt*ranmar()/6.0d0)+1
-    !i=rand_int(0,100)
     ivk = v_0
     v_worm(ivk) = 1
     v_sequ(1) = ivk

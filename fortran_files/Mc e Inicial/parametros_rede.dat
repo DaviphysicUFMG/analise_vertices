@@ -1,14 +1,14 @@
 ! Parâmetros da rede a ser simulada !
 0.0,             !dTheta: Rotação dos spins
-6,              !Nx: Repetições da célular unitária em x
-6,              !Ny: Repetições da célular unitária em y
+6,               !Nx: Repetições da célular unitária em x
+6,               !Ny: Repetições da célular unitária em y
 1,               !Contorno: 1 -> com contorno, 2 -> sem contorno
 0,               !Troca: 0 -> sem troca, 1 -> com troca
 3,               !nc: Número de cópias
-1000,            !N_mc: Número de passos de Monte Carlo
-100,              !N_temp: Números de pontos de Temperaturas
-50.0,             !Ti: Temperatura inicial
+10000,            !N_mc: Número de passos de Monte Carlo
+100,             !N_temp: Números de pontos de Temperaturas
+50.0,            !Ti: Temperatura inicial
 0.15,            !Tf: Temperatura final
 10,              !N_single: Passos de single-spin-flip
 10,              !N_kago: Passos de loops kagome
-0,              !N_tri: Passos de loops triangular
+0,               !N_tri: Passos de loops triangular
