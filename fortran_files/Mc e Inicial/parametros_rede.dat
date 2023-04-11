@@ -5,7 +5,7 @@
 1,               !Contorno: 1 -> com contorno, 2 -> sem contorno
 0,               !Troca: 0 -> sem troca, 1 -> com troca
 3,               !nc: Número de cópias
-10000,            !N_mc: Número de passos de Monte Carlo
+1000,           !N_mc: Número de passos de Monte Carlo
 100,             !N_temp: Números de pontos de Temperaturas
 50.0,            !Ti: Temperatura inicial
 0.15,            !Tf: Temperatura final

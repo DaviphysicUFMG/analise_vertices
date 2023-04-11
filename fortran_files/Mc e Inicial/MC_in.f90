@@ -645,11 +645,45 @@ subroutine output
     if (N_svt .ne. N_svk) then
         print*, 'Erro em N_K e N_T',N_K,N_T
     end if
+
     return 
 end subroutine output
 
+subroutine deallocate_var
+    use var_inicial
+    implicit none
+    rede = 0
+    contorno = 0
+    itroca = 0
+    nc = 0
+    nx = 0
+    ny = 0
+    Ns = 0
+    N_viz = 0
+    N_k = 0
+    N_T = 0
+    N_svt = 0
+    N_svk = 0
+    N_mc = 0
+    N_temp = 0
+    N_single = 0
+    N_kago = 0
+    N_tri = 0
+    Ti = 0
+    Tf = 0
+    a = 0
+    Lx = 0
+    Ly = 0
+    rc = 0
+    theta = 0
+    dir1 = ''
+
+    deallocate(Aij,xt,yt,xk,yk)
+
+    return
+end subroutine deallocate_var
+
 subroutine inicializa_rede
-    use var_inicial, only: Aij,xt,yt,xk,yk
     use var_annealing, only : N_temp,Ti,Tf,dT,iunit_en
 
     call parametros_iniciais
@@ -657,8 +691,7 @@ subroutine inicializa_rede
     call vertice_k
     call vertice_T
     call output  
-
-    deallocate(Aij,xt,yt,xk,yk)
+    call deallocate_var
 
     call ler_input(1)
     call ler_config(2)
@@ -733,6 +766,7 @@ subroutine ler_config(iunit)
             read(iunit,*) S(i)
         end do
     end if
+
     return
 end subroutine ler_config
 
@@ -802,8 +836,8 @@ subroutine ler_Vertices(iunit)
         read(iunit,*) Sk(i)
     end do
     close(iunit)
-
     call flush()
+
     return
 end subroutine ler_Vertices
 
@@ -874,7 +908,7 @@ subroutine update(i,dE)
     return
 end subroutine update
 
-subroutine Monte_Carlo()
+subroutine Monte_Carlo
     use var_annealing, only : N_mc,beta,iunit_conf,iunit_en, &
                                 N_sin,N_kago,N_tri,temp,ssf_acc, &
                                 kag_acc,tri_acc,Ns,N_K,N_T,N_mssf
@@ -927,26 +961,27 @@ subroutine Monte_Carlo()
     call config_S(iunit_conf,3)
     write(113,*) temp,SSF,kagome_loop,real(N_K,8)/(N_mc*N_kago),triagular_loop,real(N_T,8)/(N_mc*N_tri)
     call flush()
+
     return
 end subroutine Monte_Carlo
 
 subroutine metropolis
-use var_annealing, only : Ns,Bi,S,beta,ssf_acc
-use ranutil, only : ranmar,rand_int
-implicit none
-integer :: i,im
-real(8) :: dE
+    use var_annealing, only : Ns,Bi,S,beta,ssf_acc
+    use ranutil, only : ranmar,rand_int
+    implicit none
+    integer :: i,im
+    real(8) :: dE
 
-do im = 1,Ns
-    i = rand_int(1,Ns)
-    dE = -2.0d0*S(i)*Bi(i)
-    if (ranmar() < exp(-beta*dE)) then
-        call update(i,dE)
-        ssf_acc = ssf_acc + 1
-    end if
-end do
+    do im = 1,Ns
+        i = rand_int(1,Ns)
+        dE = -2.0d0*S(i)*Bi(i)
+        if (ranmar() < exp(-beta*dE)) then
+            call update(i,dE)
+            ssf_acc = ssf_acc + 1
+        end if
+    end do
 
-return
+    return
 end subroutine metropolis
 
 subroutine config_S(iunit,flag)
@@ -1155,7 +1190,6 @@ subroutine worm_T
         end if
     end do
 
-
     return
 end subroutine worm_T
 
@@ -1227,6 +1261,8 @@ subroutine metropolis_loop(s_worm, tipo)
 end subroutine metropolis_loop
  
 program main
+
     call inicializa_rede
     call Annealing
+    
 end program main
