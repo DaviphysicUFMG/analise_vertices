@@ -14,6 +14,11 @@ module var_mssf
 
 end module var_mssf
 
+module var_inout
+    integer :: idx_i, idx_f
+
+end module var_inout
+
 subroutine alloca
     use var_mssf
     implicit none
@@ -241,7 +246,7 @@ end subroutine output
 subroutine inicializa
     use var_mssf
 
-    m = 301
+    m = 401
 
     call ler_input
     call alloca
@@ -255,17 +260,26 @@ subroutine calc_intens
     use var_mssf, only : Ns, m, S, Axk, Ayk, Bxk, Byk, Intens
     implicit none
 
-    call inicializa
+    ! call inicializa
     call intensity(Ns, m, S, Axk, Ayk, Bxk, Byk, Intens)
     call output
     call dealloca
 
 end subroutine calc_intens
 
+! subroutine calc_intens_v2
+!     use var_mssf
+!     implicit none
+!     integer :: i,j
+
+    
+! end subroutine calc_intens_v2
+
 program main
     use omp_lib
     implicit none
 
+    call inicializa
     call calc_intens
 
 end program main

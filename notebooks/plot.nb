@@ -1,0 +1,83 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 13.2' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[      2576,         73]
+NotebookOptionsPosition[      2140,         58]
+NotebookOutlinePosition[      2531,         74]
+CellTagsIndexPosition[      2488,         71]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"dados", " ", "=", " ", 
+   RowBox[{"Import", "[", 
+    RowBox[{
+    "\"\</home/davi/\[CapitalAAcute]rea de Trabalho/output.dat\>\"", ",", 
+     " ", "\"\<Table\>\""}], "]"}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"pontos", " ", "=", " ", 
+   RowBox[{"Transpose", "[", 
+    RowBox[{"{", 
+     RowBox[{
+      RowBox[{"Part", "[", 
+       RowBox[{"dados", ",", " ", "All", ",", " ", "1"}], "]"}], ",", " ", 
+      RowBox[{"Part", "[", 
+       RowBox[{"dados", ",", " ", "All", ",", " ", "2"}], "]"}], ",", " ", 
+      RowBox[{"Part", "[", 
+       RowBox[{"dados", ",", " ", "All", ",", " ", "3"}], "]"}]}], "}"}], 
+    "]"}]}], ";"}]}], "Input",
+ CellChangeTimes->{{3.89213370543149*^9, 3.8921337972769327`*^9}, 
+   3.892134139210868*^9, {3.8921348474819937`*^9, 3.892134848373564*^9}},
+ CellLabel->"In[16]:=",ExpressionUUID->"401da1eb-e8a1-4f1d-83ed-bd3bf1fd652a"],
+
+Cell[BoxData[
+ RowBox[{"ListDensityPlot", "[", 
+  RowBox[{"pontos", ",", " ", 
+   RowBox[{"PlotRange", "->", "All"}], ",", " ", 
+   RowBox[{"ColorFunction", "->", "\"\<NeonColors\>\""}], ",", " ", 
+   RowBox[{"PlotLegends", "->", "Automatic"}], ",", " ", 
+   RowBox[{"FrameLabel", "->", 
+    RowBox[{"{", 
+     RowBox[{"\"\<qx\>\"", ",", " ", "\"\<qy\>\""}], "}"}]}]}], 
+  "]"}]], "Input",
+ CellChangeTimes->{{3.892133878364114*^9, 3.8921339639504633`*^9}, {
+   3.8921342250734453`*^9, 3.8921342350945663`*^9}, {3.892134455973748*^9, 
+   3.892134479314254*^9}, 3.892134511122281*^9},
+ CellLabel->"In[18]:=",ExpressionUUID->"eb8a1032-1a43-41e4-9bf0-28fa244a3e4a"]
+},
+WindowSize->{720, 789},
+WindowMargins->{{Automatic, 0}, {Automatic, 0}},
+FrontEndVersion->"13.2 for Linux x86 (64-bit) (January 31, 2023)",
+StyleDefinitions->"Default.nb",
+ExpressionUUID->"fc15d8b5-fb94-4628-888a-556f18dfbd38"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[558, 20, 913, 21, 129, "Input",ExpressionUUID->"401da1eb-e8a1-4f1d-83ed-bd3bf1fd652a"],
+Cell[1474, 43, 662, 13, 89, "Input",ExpressionUUID->"eb8a1032-1a43-41e4-9bf0-28fa244a3e4a"]
+}
+]
+*)
+
+(* End of internal cache information *)
+
